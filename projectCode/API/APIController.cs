@@ -286,7 +286,7 @@ namespace Bot_Application.API
         {
             base.BaseAddress = new Uri("https://developers.zomato.com/api/v2.1/");
             base.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            base.DefaultRequestHeaders.Add("user-key", "8e4b611eaf47262f7d5ab7d7c8b25cfb");
+            base.DefaultRequestHeaders.Add("user-key", "YOUR_API_KEY_HERE");
 
         }
 
