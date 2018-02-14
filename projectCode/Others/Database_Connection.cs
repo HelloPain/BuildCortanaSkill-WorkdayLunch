@@ -52,7 +52,7 @@ abstract class Database_Zomato
         return result;
     }
     /*
-     * only update exist cities info
+     * only update not exist cities info
      */
     static async public Task<int> AddCitiesToTableAsync(SqlConnection connection, ZomatoClient zomatoClient, UInt32[] cityIDs)
     {
