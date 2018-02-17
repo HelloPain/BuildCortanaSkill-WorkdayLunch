@@ -1,1 +1,118 @@
+1. PublicData
 
+    a) 简介
+        对于程序的其他逻辑部分来说，所有能使用的公共数据都保存在这个数据库中。
+        此数据库自动定时调用网络API来更新，故只提供查询和强制更新和这两个方法。
+        
+    b) 表定义
+        Ⅰ）记录表：保存每项记录，可查询
+        
+            i) DataProviders：数据提供者（API来源）
+                保存所有使用的API。其他表的大部分记录会指向数据来源。
+                添加或删除API支持时，会操作此表，以及其他指向此表的记录。
+                
+            ii) Nations：国家/地区
+                保存所有支持的国家/地区。城市表 和部分其他表的记录会指向其所属国家/地区。
+                添加或删除国家/地区支持时，会操作此表，以及其他指向此表的记录。
+                
+            iii) Cities：城市
+                保存所有支持的城市。餐厅表 和部分其他表的记录会指向其所属城市。
+                添加或删除城市支持时，会操作此表，以及其他指向此表的记录。
+                
+            iv) Restaurants：餐厅
+                保存所有支持的餐厅。菜品表、评价表、菜系表的记录会指向某餐馆。
+                添加或删除餐馆支持时，会操作此表，以及其他指向此表的记录。
+                
+            v) Dishes：菜品
+                保存所有菜品信息。评价表、菜系表的记录会指向某道菜。
+                添加或删除菜品，会操作此表，整个表自动每日刷新（当地时间）
+                
+            vi) Cuisines：菜系
+                保存菜系信息。类似枚举量
+                
+            vii) RatingComments：评价
+                保存所有评价。其记录指向某餐厅或某菜品
+                
+        Ⅱ) 指向表：保存逻辑指向信息，用于支持查询逻辑
+        
+            i)    Nations_Cities：国家/地区 和城市 之间的指向关系
+            ii)   Cities_Restaurants：城市 和餐厅 之间的指向关系
+            iii)  Cities_Cuisines：城市 和菜系 之间的指向关系
+            iv)   Restaurants_Cuisines：餐厅 和菜系 之间的指向关系
+            v)    Restaurants_Dishes：餐厅 和菜品 之间的指向关系
+            vi)   Restaurants_RatingComments：餐厅 和评价 之间的指向关系
+            vii)  Dishes_Cuisines：菜品 和评价之间的指向关系
+            viii) Dishes_RatingComments：菜品 和评价之间的指向关系
+           
+    c) 列定义：每个表的记录的含义
+    
+        Ⅰ) DatabaseProviders
+            i)   ID：此表自动指派的唯一标识 [smallint] [primary key]
+            ii)  name：提供者名字 [nvarchar] [not null]
+            iii) homepageURL：提供者主页 [varchar]
+        
+        Ⅱ) Nations
+            i)   ID：ISO3166标准的国家数字标识 [smallint] [primary key]
+            ii)  name_English：国家官方英文全名 [varchar] [not null]
+            iii) name_locale：当地官方全名 [nvarchar]
+            iv)  currency：ISO4217标准的三字符货币标识 [char(3)] [not null]
+            
+        Ⅲ) Cities
+            i)   ID：此表自动指派的唯一标识 [smallint] [primary key]
+            ii)  name_locale：当地官方全名 [nvarchar] [not null]
+            iii) name_English：城市官方英文全名 [varchar]
+            
+        Ⅳ) Restaurants
+            i)     ID：此表自动指派的唯一标识 [int] [primary key]
+            ii)    city_ID：所属城市的ID [smallint] [not null]
+            iii)   name：当地全名 [nvarchar] [not null]
+            iv)    locality_address：当地地址（至少从城市地址起） [nvarchar] [not null]
+            v)     description：餐厅描述 [nvarchar]
+            vi)    locality_latitude：纬度 [decimal(8,6)]
+            vii)   locality_longitude：经度 [decimal(9,6)]
+            viii)  locality_zipcode：当地邮编 [varchar]
+            ix)    currency_Nation_ID：支付货币的所属国家
+            x)     restaurant_type：餐厅类型，枚举字符串 [varchar]
+            xi)    open_time：开店当地时间 [smalldatetime]
+            xii)   close_time：打样当地时间 [smalldatetime]
+            xiii)  average_cost_by_one：一人用餐平均价格 [decimal(15,2)]
+            xiv)   average_cost_by_two：两人用餐平均单人价格 [decimal(15,2)]
+            xv)    is_delivering：可否外卖 [bit]
+            xvi)   imageURL：简介图URL [varchar]
+            xvii)  photosURL：相册URL [varchar]
+            xviii) eventsURL：活动URL [varchar]
+            xix)   homepageURL：餐厅主页 [varchar]
+            xx)    DataProviderID：数据提供者ID
+            
+        Ⅴ) Dishes
+            i)    ID：此表自动指派的唯一标识 [bigint] [primary key]
+            ii)   name：菜品名 [nvarchar] [not null]
+            iii)  price：单价 [decimal(15,2)] [not null]
+            iv)   description：菜品描述 [nvarchar]
+            v)    cuisine_ID：所属菜系的ID [smallint]
+            vi)   currency_Nation_ID：支付货币的所属国家，默认继承自菜品所属餐厅的支付货币 [smallint]
+            vii)  photosURL：相册URL [varchar]
+            viii) DataProviderID：数据提供者ID
+            
+        Ⅵ) Cuisines
+            i)   ID：此表自动指派的唯一标识符 [smallint] [primary key]
+            ii)  name_locale：菜系当地名 [nvarchar] [not null]
+            iii) original_country_ID：菜系发源国ID [smallint]
+            iv)  name_English：菜系英文名 [varchar]
+            
+        Ⅶ) RatingComments
+            i)    ID：此表自动指派的唯一标识符 [bigint] [primary key]
+            ii)   rating：评分（0到100） [tinyint] [not null]
+            iii)  user_name：评论用户名 [nvarchar]
+            iv)   user_level：评论用户等级(0到100) [tinyint]
+            v)    likes：赞数 [int]
+            vi)   comment：评论 [nvarchar]
+            vii)  nationID：用户注册国家
+            viii) DataProviderID：数据提供者ID
+            
+    d) 查询方法（目前可用）
+        Ⅰ)  ContainsProvider：数据库内是否有某数据提供者
+        Ⅱ) ContainsNation：数据库内是否支持某国家/地区
+        Ⅲ) ContainsCity：数据库内是否支持某城市
+        Ⅳ) ContainsRestaurant：数据库内是否支持某餐厅
+        Ⅴ) GetCityID：获得某城市的内部ID
