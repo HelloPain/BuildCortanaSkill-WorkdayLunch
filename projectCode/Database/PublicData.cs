@@ -1,538 +1,15 @@
 using System.Data.SqlClient;
 using System;
-using System.Text;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Web;
 
-using TinyInt = System.Byte;
 using SmallInt = System.Int16;
 using Int = System.Int32;
 using BigInt = System.Int64;
-
-public class ZomatoClient : HttpClient
-{
-    //doc: https://developers.zomato.com/documentation#/
-    static readonly string[] requestType =
-    {
-          "categories","cities","collections","cuisines","establishments","geocode",//common
-          "location_details","locations",//location
-          "dailymenu","restaurant","reviews","search"//restaurant
-        };
-    public class CategoriesJson
-    {
-        public struct Catergory
-        {
-            public SmallInt id;
-            public string name;
-        }
-        public struct CatergoriesListItem : IComparable<CatergoriesListItem>
-        {
-            public Catergory categories;
-
-            int IComparable<CatergoriesListItem>.CompareTo(CatergoriesListItem other)
-            {
-                return categories.id - other.categories.id;
-            }
-        }
-        public CatergoriesListItem[] categories;
-    }
-    public class CitiesJson
-    {
-        public struct City
-        {
-            public int id;
-            public string name;
-            public SmallInt country_id;//optional
-            public string country_name;//optional
-            public bool is_state;//optional
-            public int state_id;//optional
-            public string state_name;//optional
-            public string state_code;//optional
-        }
-        public City[] location_suggestions;
-        public string status;
-        public int has_more;
-        public int has_total;
-    }
-    public class CollectionsJson
-    {
-        public struct Collection
-        {
-            public BigInt collection_id;//optional
-            public int res_count;//optional
-            public string share_url;//optional
-            public string title;//optional
-            public string url;//optional
-            public string description;//optional
-            public string image_url;//optional
-        }
-        public struct CollectionListObject
-        {
-            public Collection collection;
-        }
-        public CollectionListObject[] collections;
-        public int has_more;
-        public string share_url;   //list of the collections
-        public string display_text;
-        public int has_total;
-    }
-    public class CuisinesJson
-    {
-        public struct Cuisine
-        {
-            public BigInt cuisine_id;
-            public string cuisine_name;
-        }
-        public struct CuisineListObject
-        {
-            public Cuisine cuisine;
-        }
-        public CuisineListObject[] cuisines;
-    }
-    public class EstablishmentJson
-    {
-        public struct Establishment
-        {
-            public int id;
-            public string name;
-        }
-        public struct EstablishmentListObject
-        {
-            public Establishment establishment;
-        }
-        public EstablishmentListObject[] establishments;
-    }
-    public class GeocodeJson
-    {
-        public class NearbyRestaurantsListObject
-        {
-            public RestaurantL3 restaurant;
-        }
-        public Location location;//optional
-        public Popularity popularity;//optional
-        public string link;//optional;URL of the web search page of the locality
-        public NearbyRestaurantsListObject[] nearby_restaurants;//optional;list of nearby restaurants
-    }
-    public class LocationJson
-    {
-        public Location[] location_suggestions;
-        public string status;
-        public int has_more;
-        public int has_total;
-    }
-    public class LocationDetialsJson
-    {
-        //class Popularity
-        public Popularity popularity;
-        public Location location;//optional;location struct 
-        public RestaurantL3[] best_rated_restaurants;//optional;list of top rated restaurants in location
-    }
-    public class DailyMenuJson
-    {
-        public DailyMenuCategory[] daily_menu;//optional;List of restaurant's menu details
-    }
-    public class RestaurantJson
-    {
-        public string apikey;
-        public string id;
-        public string name;
-        public string url;
-        public ResLocation location;
-        public BigInt switch_to_order_menu;
-        public int average_cost_for_two;//optional;Average price of a meal for two people
-        public int price_range;//optional;Price bracket of the restaurant (1 being pocket friendly and 4 being the costliest)
-        public string currency;//optional;Local currency symbol; to be used with price
-        public string thumb;//optional;URL of the low resolution header image of restaurant
-        public string featured_image;//optional;URL of the high resolution header image of restaurant
-        public string photos_url;//optional;URL of the restaurant's photos page
-        public string menu_url;//optional;URL of the restaurant's menu page
-        public string events_url;//optional;URL of the restaurant's events page
-        public UserRating user_rating;//optional;Restaurant rating details
-        public bool has_online_delivery;//optional;Whether the restaurant has online delivery enabled or not
-        public bool is_delivering_now;//optional;Valid only if has_online_delivery = 1; whether the restaurant is accepting online orders right now
-        public bool has_table_booking;//optional;Whether the restaurant has table reservation enabled or not
-        public string deeplink;// optional;Short URL of the restaurant page; for use in apps or social shares,
-        public string cuisines;//optional;List of cuisines served at the restaurant in csv format
-        public int all_reviews_count;//optional;[Partner access] Number of reviews for the restaurant
-        public int photo_count;//optional;[Partner access] Total number of photos for the restaurant, at max 10 photos for partner access
-        public string phone_numbers;//optional;[Partner access] Restaurant's contact numbers in csv format
-        public Photo[] photos;//optional;[Partner access] List of restaurant photos
-        public Review[] all_reviews;//optional;[Partner access] List of restaurant reviews 
-    }
-    public class ReviewsJson
-    {
-        public struct ReviewsListItem
-        {
-            public Review review;
-        }
-        public BigInt reviews_count;
-        public BigInt reviews_start;
-        public SmallInt reviews_shown;
-        public ReviewsListItem[] user_reviews;
-        public string Respond_to_reviews_via_Zomato_Dashboard;//url
-    }
-
-    public class Location
-    {
-        public string entity_type;//optional;Type of location; one of [city, zone, subzone, landmark, group, metro, street]
-        public int entity_id;//optional;ID of location; (entity_id, entity_type) tuple uniquely identifies a location
-        public string title;//optional;Name of the location
-        public double latitude;//optional;Coordinates of the (centre of) location
-        public double longitude;//optional;Coordinates of the (centre of) location
-        public int city_id;//optional;ID of city
-        public string city_name;//optional;Name of the city
-        public SmallInt country_id;//optional;ID of country
-        public string country_name;//optional;Name of the country
-    }
-    public class Popularity
-    {
-        public float popularity;//Foodie index of a location out of 5.00
-        public float nightlife_index;//Nightlife index of a location out of 5.00
-        public string[] top_cuisines;//optional;Most popular cuisines in the locality
-    }
-    public class RestaurantL3
-    {
-        public BigInt id;//optional;ID of the restaurant
-        public string name;//optional;Name of the restaurant
-        public string url;//optional;URL of the restaurant page
-        public ResLocation location;//optional;Restaurant location details
-        public int average_cost_for_two;//optional;Average price of a meal for two people
-        public int price_range;//optional;Price bracket of the restaurant (1 being pocket friendly and 4 being the costliest)
-        public string currency;//optional;Local currency symbol; to be used with price
-        public string thumb;//optional;URL of the low resolution header image of restaurant
-        public string featured_image;//optional;URL of the high resolution header image of restaurant
-        public string photos_url;//optional;URL of the restaurant's photos page
-        public string menu_url;//optional;URL of the restaurant's menu page
-        public string events_url;//optional;URL of the restaurant's events page
-        public UserRating user_rating;//optional;Restaurant rating details
-        public bool has_online_delivery;//optional;Whether the restaurant has online delivery enabled or not
-        public bool is_delivering_now;//optional;Valid only if has_online_delivery = 1; whether the restaurant is accepting online orders right now
-        public bool has_table_booking;//optional;Whether the restaurant has table reservation enabled or not
-        public string deeplink;// optional;Short URL of the restaurant page; for use in apps or social shares,
-        public string cuisines;//optional;List of cuisines served at the restaurant in csv format
-        public int all_reviews_count;//optional;[Partner access] Number of reviews for the restaurant
-        public int photo_count;//optional;[Partner access] Total number of photos for the restaurant, at max 10 photos for partner access
-        public string phone_numbers;//optional;[Partner access] Restaurant's contact numbers in csv format
-        public Photo[] photos;//optional;[Partner access] List of restaurant photos
-        public Review[] all_reviews;//optional;[Partner access] List of restaurant reviews 
-    }
-    public class ResLocation
-    {
-        public string address;//Complete address of the restaurant
-        public string locality;//Name of the locality
-        public string city;//Name of the city
-        public double latitude;//Coordinates of the restaurant
-        public double longitude;//Coordinates of the restaurant
-        public string zipcode;//Zipcode
-        public SmallInt country_id;//ID of the country 
-    }
-    public class UserRating
-    {
-        public float aggregate_rating;//optional;Restaurant rating on a scale of 0.0 to 5.0 in increments of 0.1
-        public string rating_text;//optional;Short description of the rating
-        public string ratinng_color;//optional;Color hex code used with the rating on Zomato
-        public int votes;//optional;Number of ratings received 
-    }
-    public class Photo
-    {
-        public string id;//ID of the photo
-        public string url;//URL of the image file
-        public string thumb_url;//URL for 200 X 200 thumb image file
-        public User user;//User who uploaded the photo
-        public BigInt res_id;//ID of restaurant for which the image was uploaded
-        public string caption;//Caption of the photo
-        public int timestamp;//Unix timestamp when the photo was uploaded
-        public string friendly_time;//User friendly time string; denotes when the photo was uploaded
-        public int width;//Image width in pixel; usually 640
-        public int height;//Image height in pixel; usually 640
-        public int comments_count;//Number of comments on photo
-        public int likes_count;//Number of likes on photo 
-    }
-    public class Review
-    {
-        public float rating;//Rating on scale of 0 to 5 in increments of 0.5
-        public string review_text;//Review text
-        public int id;//ID of the review
-        public string rating_color;//Color hex code used with the rating on Zomato
-        public string review_time_friendly;//User friendly time string corresponding to time of review posting
-        public string rating_text;//Short description of the rating
-        public BigInt timestamp;//Unix timestamp for review_time_friendly
-        public int likes;//No of likes received for review
-        public User user;//User details of author of review
-        public int comments_count;//No of comments on review 
-    }
-    public class User
-    {
-        public string name;//optional;User's name;
-        public string zomato_handle;//optional;User's @handle; uniquely identifies a user on Zomato
-        public string foodie_level;//optional;Text for user's foodie level
-        public SmallInt foodie_level_num;//optional;Number to identify user's foodie level; ranges from 0 to 10 
-        public string foodie_color;//optional;Color hex code used with foodie level on Zomato
-        public string profile_url;//optional;URL for user's profile on Zomato
-        public string profile_deeplink;//optional;short URL for user's profile on Zomato; for use in apps or social sharing
-        public string profile_image;//optional;URL for user's profile image
-    }
-    public class DailyMenuCategory
-    {
-        public BigInt daily_menu_id;//optional;ID of the restaurant
-        public string name;//optional;Name of the restaurant 
-        public string start_date;//optional;Daily Menu start timestamp;
-        public string end_date;//optional;Daily Menu end timestamp
-        public DailyMenuItem[] dishes;//optional;Menu item in the category
-    }
-    public class DailyMenuItem
-    {
-        public BigInt dish_id;//optional;Menu Iten ID
-        public string name;//optional;Menu Item Title
-        public string price;//optional;Menu Item Price
-    }
-
-    public ZomatoClient() : base()
-    {
-        base.BaseAddress = new Uri("https://developers.zomato.com/api/v2.1/");
-        base.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        base.DefaultRequestHeaders.Add("user-key", "8e4b611eaf47262f7d5ab7d7c8b25cfb");
-
-    }
-
-    /*Get a list of categories. List of all restaurants categorized under a particular restaurant type can be obtained using /Search API with Category ID as inputs*/
-    public async Task<CategoriesJson> GetCategoriesAsync()
-    {
-        HttpResponseMessage response = await this.GetAsync("categories", HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            string tmp = response.Content.ReadAsStringAsync().Result;
-            return await response.Content.ReadAsAsync<CategoriesJson>();
-        }
-        else return null;
-    }
-    /*Find the Zomato ID and other details for a city . You can obtain the Zomato City ID in one of the following ways:
-
-        City Name in the Search Query - Returns list of cities matching the query
-        Using coordinates - Identifies the city details based on the coordinates of any location inside a city
-
-     * If you already know the Zomato City ID, this API can be used to get other details of the city.
-     * count -- max number of results needed
-     */
-    public async Task<CitiesJson> GetCitiesAsync(string cityName, BigInt count = BigInt.MaxValue)
-    {
-        HttpResponseMessage response = await this.GetAsync("cities?q=" + HttpUtility.UrlEncode(cityName) + "&count=" + count, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CitiesJson>();
-        }
-        else return null;
-    }
-    public async Task<CitiesJson> GetCitiesAsync(Int[] cityIDs)
-    {
-        if (cityIDs.Length == 0) return null;
-        StringBuilder request = new StringBuilder("cities?city_ids=");
-        request.Append(cityIDs[0].ToString());
-        if (cityIDs.Length > 1)
-            for (int index = 2; index < cityIDs.Length; ++index)
-            {
-                request.Append("%2C"); request.Append(cityIDs[index]);
-            }
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CitiesJson>();
-        }
-        else return null;
-    }
-    public async Task<CitiesJson> GetCitiesAsync(double lat, double lon)
-    {
-        StringBuilder request = new StringBuilder("cities?lat=");
-        request.Append(lat.ToString());
-        request.Append("&lon=");
-        request.Append(lon.ToString());
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CitiesJson>();
-        }
-        else return null;
-    }
-    /*Returns Zomato Restaurant Collections in a City. The location/City input can be provided in the following ways -
-
-        Using Zomato City ID
-        Using coordinates of any location within a city
-
-     *List of all restaurants listed in any particular Zomato Collection can be obtained using the '/search' API with Collection ID and Zomato City ID as the input
-     */
-    public async Task<CollectionsJson> GetCollectionsAsync(int cityID)
-    {
-        HttpResponseMessage response = await this.GetAsync("collections?city_id=" + cityID, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CollectionsJson>();
-        }
-        else return null;
-    }
-    public async Task<CollectionsJson> GetCollectionsAsync(double lat, double lon)
-    {
-        StringBuilder request = new StringBuilder("collections?lat=");
-        request.Append(lat);
-        request.Append("&lon=");
-        request.Append(lon);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CollectionsJson>();
-        }
-        else return null;
-    }
-    /*Get a list of all cuisines of restaurants listed in a city. The location/city input can be provided in the following ways -
-
-        Using Zomato City ID
-        Using coordinates of any location within a city
-
-     *List of all restaurants serving a particular cuisine can be obtained using '/search' API with cuisine ID and location details
-     */
-    public async Task<CuisinesJson> GetCuisionAsync(int cityID)
-    {
-        HttpResponseMessage response = await this.GetAsync("cuisines?city_id=" + cityID, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CuisinesJson>();
-        }
-        else return null;
-
-    }
-    public async Task<CuisinesJson> GetCuisionAsync(double lat, double lon)
-    {
-        StringBuilder request = new StringBuilder("cuisines?lat=");
-        request.Append(lat);
-        request.Append("&lon=");
-        request.Append(lon);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<CuisinesJson>();
-        }
-        else return null;
-    }
-    /*Get a list of restaurant types in a city. The location/City input can be provided in the following ways -
-
-        Using Zomato City ID
-        Using coordinates of any location within a city
-
-     *List of all restaurants categorized under a particular restaurant type can obtained using /Search API with Establishment ID and location details as inputs
-     */
-    public async Task<EstablishmentJson> GetEstablishmentAsync(int cityID)
-    {
-        HttpResponseMessage response = await this.GetAsync("establishments?city_id=" + cityID, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<EstablishmentJson>();
-        }
-        else return null;
-    }
-    public async Task<EstablishmentJson> GetEstablishmentAsync(double lat, double lon)
-    {
-        StringBuilder request = new StringBuilder("establishments?lat=");
-        request.Append(lat);
-        request.Append("&lon=");
-        request.Append(lon);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<EstablishmentJson>();
-        }
-        else return null;
-    }
-    /*Get Foodie and Nightlife Index, list of popular cuisines and nearby restaurants around the given coordinates*/
-    public async Task<GeocodeJson> GetGeocodeAsync(double lat, double lon)
-    {
-        StringBuilder request = new StringBuilder("geocode?lat=");
-        request.Append(lat);
-        request.Append("&lon=");
-        request.Append(lon);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<GeocodeJson>();
-        }
-        else return null;
-    }
-    /*Search for Zomato locations by keyword. Provide coordinates to get better search results*/
-    public async Task<LocationJson> GetLocationAsync(string queryName, BigInt count = BigInt.MaxValue)
-    {
-        HttpResponseMessage response = await this.GetAsync("locations?query=" + HttpUtility.UrlEncode(queryName) + "&count=" + count, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<LocationJson>();
-        }
-        else return null;
-    }
-    public async Task<LocationJson> GetLocationAsync(string queryName, double lat, double lon, BigInt count = BigInt.MaxValue)
-    {
-        StringBuilder request = new StringBuilder("locations?query=" + HttpUtility.UrlEncode(queryName) + '&');
-        request.Append(lat);
-        request.Append("&lon=");
-        request.Append(lon);
-        request.Append("&count=");
-        request.Append(count);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<LocationJson>();
-        }
-        else return null;
-    }
-    /*Get Foodie Index, Nightlife Index, Top Cuisines and Best rated restaurants in a given location*/
-    public async Task<LocationDetialsJson> GetLocationDetialsAsync(int entity_id, string entity_type)
-    {
-        StringBuilder request = new StringBuilder("location_details?entity_id=");
-        request.Append(entity_id);
-        request.Append("&entity_type=");
-        request.Append(entity_type);
-        HttpResponseMessage response = await this.GetAsync(request.ToString(), HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<LocationDetialsJson>();
-        }
-        else return null;
-
-    }
-    /*Get daily menu using Zomato restaurant ID*/
-    public async Task<DailyMenuJson> GetDailyMenuAsync(BigInt res_id)
-    {
-        HttpResponseMessage response = await this.GetAsync("dailymenu?res_id=" + res_id, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<DailyMenuJson>();
-        }
-        else return null;
-    }
-    /*Get detailed restaurant information using Zomato restaurant ID. Partner Access is required to access photos and reviews*/
-    public async Task<RestaurantJson> GetRestaurantAsync(BigInt res_id)
-    {
-        HttpResponseMessage response = await this.GetAsync("restaurant?res_id=" + res_id, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<RestaurantJson>();
-        }
-        else return null;
-    }
-    /*Get restaurant reviews using the Zomato restaurant ID. Only 5 latest reviews are available under the Basic API plan.*/
-    ///fetch results after this offset
-    public async Task<ReviewsJson> GetReviewsAsync(BigInt res_id, BigInt start = 0, BigInt count = BigInt.MaxValue)
-    {
-        HttpResponseMessage response = await this.GetAsync("reviews?res_id=" + res_id + "&start=" + start + "&count=" + count, HttpCompletionOption.ResponseHeadersRead);
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadAsAsync<ReviewsJson>();
-        }
-        else return null;
-    }
-}
+using TinyInt = System.Byte;
 
 static class PublicData//the Encapsulation of all providers' databases
 {
-    public const string DatabaseHeader = "[Database_Encapsulation].";
+    public const string DatabaseHeader = "[PublicData].";
     public static class Table_DatabaseProviders
     {
         public const string Header = "[dbo].[DatabaseProviders]";
@@ -572,92 +49,97 @@ static class PublicData//the Encapsulation of all providers' databases
         public const string Header = "[dbo].[Restaurants]";
         public const string Columns = @"([ID],[city_ID],[name],[locality_address],[description],[locality_latitude],[locality_longitude],
             [locality_zipcode],[currency_Nation_ID],[restaurant_type],[open_time],[close_time],[average_cost_by_one],
-            [average_cost_by_two],[is_delivering],[imageURL],[photosURL],[eventsURL],[homepageURL],[DataProviderID])";
+            [average_cost_by_two],[is_delivering],[imageURL],[photosURL],[eventsURL],[homepageURL],[phone_number],[DataProviderID])";
         public class Restaurant
         {
-            public Restaurant(SmallInt CityID,string resName,string address)
+            public Restaurant(SmallInt CityID, string resName, string address)
             {
                 City_ID = CityID;
                 Name = resName;
                 Locality_address = address;
             }
-            private Int ID ;//internally assigned id;primary key
+            private Int ID;//internally assigned id;primary key
             public SmallInt City_ID { private set; get; }//not null
             public string Name { private set; get; }//not null
             public string Locality_address { private set; get; }//not null
             public string Description
             {
-                set { description = value;is_description_init = true; }
+                set { description = value; is_description_init = true; }
                 get { return description; }
             }
             public double Locality_latitude
             {
-                set { locality_latitude = value;is_locality_latitude_init = true; }
+                set { locality_latitude = value; is_locality_latitude_init = true; }
                 get { return locality_latitude; }
             }
             public double Locality_longitude
             {
-                set { locality_longitude = value;is_locality_longitude_init = true; }
+                set { locality_longitude = value; is_locality_longitude_init = true; }
                 get { return locality_longitude; }
             }
             public string Locality_zipcode
             {
-                set {locality_zipcode=value; is_locality_zipcode_init = true; }
+                set { locality_zipcode = value; is_locality_zipcode_init = true; }
                 get { return locality_zipcode; }
             }
             public SmallInt Currency_Nation_ID
             {
-                set { currency_Nation_ID = value;is_currency_Nation_ID_init = true; }
+                set { currency_Nation_ID = value; is_currency_Nation_ID_init = true; }
                 get { return currency_Nation_ID; }
             }
             public string Restaurant_type
             {
-                set { restaurant_type = value;is_restaurant_type_init = true; }
+                set { restaurant_type = value; is_restaurant_type_init = true; }
                 get { return restaurant_type; }
             }
             public DateTime Open_time
             {
-                set { open_time = value;is_open_time_init = true; }
+                set { open_time = value; is_open_time_init = true; }
                 get { return open_time; }
             }
             public DateTime Close_time
             {
-                set { close_time = value;is_close_time_init = true; }
+                set { close_time = value; is_close_time_init = true; }
                 get { return close_time; }
             }
             public double Average_cost_by_one
             {
-                set { average_cost_by_one = value;is_average_cost_by_one_init = true; }
+                set { average_cost_by_one = value; is_average_cost_by_one_init = true; }
                 get { return average_cost_by_one; }
             }
             public double Average_cost_by_two
             {
-                set { average_cost_by_two = value;is_average_cost_by_two_init = true; }
+                set { average_cost_by_two = value; is_average_cost_by_two_init = true; }
                 get { return average_cost_by_two; }
             }
             public string ImageURL
             {
-                set { imageURL = value;is_imageURL_init = true; }
+                set { imageURL = value; is_imageURL_init = true; }
                 get { return imageURL; }
             }
             public string PhotosURL
             {
-                set { photosURL = value;is_photoURL_init = true; }
+                set { photosURL = value; is_photoURL_init = true; }
                 get { return photosURL; }
             }
             public string EventsURL
             {
-                set { eventsURL = value;is_eventsURL_init = true; }
+                set { eventsURL = value; is_eventsURL_init = true; }
                 get { return eventsURL; }
             }
             public string HomepageURL
             {
-                set { homepageURL = value;is_homepageURL_init = true; }
+                set { homepageURL = value; is_homepageURL_init = true; }
                 get { return homepageURL; }
+            }
+            public string Phone_number
+            {
+                set { phone_number = value; is_phone_number_init = true; }
+                get => phone_number;
             }
             public SmallInt DataProviderID
             {
-                set { dataProviderID = value;is_dataProviderID_init = true; }
+                set { dataProviderID = value; is_dataProviderID_init = true; }
                 get { return dataProviderID; }
             }
 
@@ -691,6 +173,8 @@ static class PublicData//the Encapsulation of all providers' databases
             protected internal bool is_eventsURL_init = false;
             private string homepageURL;
             protected internal bool is_homepageURL_init = false;
+            private string phone_number;
+            protected internal bool is_phone_number_init = false;
             private SmallInt dataProviderID;//id in table DatabaseProviders
             protected internal bool is_dataProviderID_init = false;
         }
@@ -703,40 +187,40 @@ static class PublicData//the Encapsulation of all providers' databases
         {
             public Dish(string name, double price)
             {
-                Name = name;Price = price;
+                Name = name; Price = price;
             }
             private BigInt ID;//unique worldwide id in a day;primary key
             public string Name//not null
             {
-                private set;get;
+                private set; get;
             }
             public double Price//not null
             {
-                private set;get;
+                private set; get;
             }
             public string Description
             {
-                set { description = value;is_description_init = true; }
+                set { description = value; is_description_init = true; }
                 get { return description; }
             }
             public SmallInt Cuisine_ID
             {
-                set { cuisine_ID = value;is_cuisine_ID_init = true; }
+                set { cuisine_ID = value; is_cuisine_ID_init = true; }
                 get { return cuisine_ID; }
             }
             public SmallInt Currency_Nation_ID
             {
-                set { currency_Nation_ID = value;is_currency_Nation_ID_init = true; }
+                set { currency_Nation_ID = value; is_currency_Nation_ID_init = true; }
                 get { return currency_Nation_ID; }
             }
             public string PhotosURL
             {
-                set { photosURL = value;is_photosURL_init = true; }
+                set { photosURL = value; is_photosURL_init = true; }
                 get { return photosURL; }
             }
             public SmallInt DataProviderID
             {
-                set { dataProviderID = value;is_dataProviderID_init = true; }
+                set { dataProviderID = value; is_dataProviderID_init = true; }
                 get { return dataProviderID; }
             }
 
@@ -765,16 +249,16 @@ static class PublicData//the Encapsulation of all providers' databases
             private SmallInt ID;//internally assigned id, never change;primary key
             public string Name_locale//not null
             {
-                private set;get;
+                private set; get;
             }
             public string Name_English
             {
-                set { name_English = value;is_name_English_init = true; }
+                set { name_English = value; is_name_English_init = true; }
                 get { return name_English; }
             }
             public SmallInt Original_country_ID
             {
-                set { original_country_ID = value;is_original_country_ID_init = true; }
+                set { original_country_ID = value; is_original_country_ID_init = true; }
                 get { return original_country_ID; }
             }
 
@@ -798,16 +282,16 @@ static class PublicData//the Encapsulation of all providers' databases
             public TinyInt Rating//0~100;not null
             {
                 private set => rating = value > (TinyInt)100 ? (TinyInt)100 : value;
-                get=>rating;
+                get => rating;
             }
             public string User_name
             {
-                set { user_name = value;is_user_name_init = true; }
+                set { user_name = value; is_user_name_init = true; }
                 get { return user_name; }
             }
             public TinyInt User_level//0~100
             {
-                set { user_level = value;is_user_level_init = true; }
+                set { user_level = value; is_user_level_init = true; }
                 get { return user_level; }
             }
             public Int Likes
@@ -817,7 +301,7 @@ static class PublicData//the Encapsulation of all providers' databases
             }
             public string Comment
             {
-                set { comment = value;is_comment_init = true; }
+                set { comment = value; is_comment_init = true; }
                 get { return comment; }
             }
             public SmallInt NationID//user's nationality
@@ -827,7 +311,7 @@ static class PublicData//the Encapsulation of all providers' databases
             }
             public SmallInt DataProviderID//id in table DatabaseProviders
             {
-                set { dataProviderID = value;is_dataProviderID_init = true; }
+                set { dataProviderID = value; is_dataProviderID_init = true; }
                 get { return dataProviderID; }
             }
 
@@ -846,7 +330,7 @@ static class PublicData//the Encapsulation of all providers' databases
             private SmallInt nationID;//user's nationality
         }
     }
-    private static class Union_Table_Nations_Cities//archive
+    public static class Union_Table_Nations_Cities//archive
     {
         public const string Header = "[dbo].[Nations_Cities]";
         public const string Columns = "([nation_ID],[city_ID])";
@@ -947,11 +431,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //   T:System.ObjectDisposedException:
     //   T:System.OverflowException:
     //     all id uesd up
-    private static Task<SmallInt> GenerateNewCityID(SqlConnection connection)
+    public static Task<SmallInt> GenerateNewCityID(SqlConnection connection)
     {
         SmallInt result = SmallInt.MinValue;
-        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Cities.Header+"ORDER BY[ID]ASC", connection))
+        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Cities.Header + "ORDER BY[ID]ASC", connection))
         {
             using (SqlDataReader reader = GetIDs.ExecuteReader())
             {
@@ -998,8 +482,8 @@ static class PublicData//the Encapsulation of all providers' databases
     private static Task<Int> GenerateNewRestaurantID(SqlConnection connection)
     {
         Int result = Int.MinValue;
-        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Restaurants.Header+"ORDER BY[ID]ASC", connection))
+        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Restaurants.Header + "ORDER BY[ID]ASC", connection))
         {
             using (SqlDataReader reader = GetIDs.ExecuteReader())
             {
@@ -1046,8 +530,8 @@ static class PublicData//the Encapsulation of all providers' databases
     private static Task<SmallInt> GenerateNewProviderID(SqlConnection connection)
     {
         SmallInt result = SmallInt.MinValue;
-        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_DatabaseProviders.Header+"ORDER BY[ID]ASC", connection))
+        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_DatabaseProviders.Header + "ORDER BY[ID]ASC", connection))
         {
             using (SqlDataReader reader = GetIDs.ExecuteReader())
             {
@@ -1094,8 +578,8 @@ static class PublicData//the Encapsulation of all providers' databases
     private static Task<BigInt> GenerateNewDishID(SqlConnection connection)
     {
         BigInt result = BigInt.MinValue;
-        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Dishes.Header+"ORDER BY[ID]ASC", connection))
+        using (SqlCommand GetIDs = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Dishes.Header + "ORDER BY[ID]ASC", connection))
         {
             using (SqlDataReader reader = GetIDs.ExecuteReader())
             {
@@ -1366,7 +850,7 @@ static class PublicData//the Encapsulation of all providers' databases
     {
         Task<Int> newID = GenerateNewRestaurantID(connection);
         string insertCommandString = "INSERT INTO" + DatabaseHeader + Table_Restaurants.Header + Table_Restaurants.Columns
-            + "VALUES(@id,@cityID,@name,@address,@description,@lat,@lon,@zip,@currencyID,@type,@open,@close,@costOne,@costTwo,@delivery,@image,@photo,@event,@homepage,@providerID)";
+            + "VALUES(@id,@cityID,@name,@address,@description,@lat,@lon,@zip,@currencyID,@type,@open,@close,@costOne,@costTwo,@delivery,@image,@photo,@event,@homepage,@phone,@providerID)";
         using (SqlCommand Insertion = new SqlCommand(insertCommandString, connection))
         {
             Insertion.Parameters.AddWithValue("@cityID", res.City_ID);
@@ -1402,6 +886,8 @@ static class PublicData//the Encapsulation of all providers' databases
             else Insertion.Parameters.AddWithValue("@event", DBNull.Value);
             if (res.is_homepageURL_init) Insertion.Parameters.AddWithValue("@homepage", res.HomepageURL);
             else Insertion.Parameters.AddWithValue("@homepage", DBNull.Value);
+            if (res.is_phone_number_init) Insertion.Parameters.AddWithValue("@phone", res.Phone_number);
+            else Insertion.Parameters.AddWithValue("@phone", DBNull.Value);
             if (res.is_dataProviderID_init) Insertion.Parameters.AddWithValue("@providerID", res.DataProviderID);
             else Insertion.Parameters.AddWithValue("@providerID", DBNull.Value);
             Insertion.Parameters.AddWithValue("@id", await newID);
@@ -1592,11 +1078,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //   T:System.InvalidOperationException:
     //   T:System.IO.IOException:
     //   T:System.ObjectDisposedException:
-    internal static Task<bool> ContainsProvider(SqlConnection connection,string name)
+    internal static Task<bool> ContainsProvider(SqlConnection connection, string name)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_DatabaseProviders.Header+"WHERE[name]=@name", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_DatabaseProviders.Header + "WHERE[name]=@name", connection))
         {
             Check.Parameters.AddWithValue("@name", name);
             using (SqlDataReader reader = Check.ExecuteReader())
@@ -1604,11 +1090,11 @@ static class PublicData//the Encapsulation of all providers' databases
         }
         return Task.FromResult<bool>(result);
     }
-    internal static Task<bool> ContainsProvider(SqlConnection connection,SmallInt providerID)
+    internal static Task<bool> ContainsProvider(SqlConnection connection, SmallInt providerID)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_DatabaseProviders.Header+"WHERE[ID]=@providerID", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_DatabaseProviders.Header + "WHERE[ID]=@providerID", connection))
         {
             Check.Parameters.AddWithValue("@providerID", providerID);
             using (SqlDataReader reader = Check.ExecuteReader())
@@ -1629,11 +1115,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //   T:System.InvalidOperationException:
     //   T:System.IO.IOException:
     //   T:System.ObjectDisposedException:
-    internal static Task<bool> ContainsNation(SqlConnection connection,SmallInt ISO3166NationNumericCode)
+    internal static Task<bool> ContainsNation(SqlConnection connection, SmallInt ISO3166NationNumericCode)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Nations.Header+"WHERE[ID]=@nationID", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Nations.Header + "WHERE[ID]=@nationID", connection))
         {
             Check.Parameters.AddWithValue("@nationID", ISO3166NationNumericCode);
             using (SqlDataReader reader = Check.ExecuteReader())
@@ -1654,11 +1140,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //   T:System.InvalidOperationException:
     //   T:System.IO.IOException:
     //   T:System.ObjectDisposedException:
-    internal static Task<bool> ContainsCity(SqlConnection connection,SmallInt cityID)
+    internal static Task<bool> ContainsCity(SqlConnection connection, SmallInt cityID)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Cities.Header+"WHERE[ID]=@cityID", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Cities.Header + "WHERE[ID]=@cityID", connection))
         {
             Check.Parameters.AddWithValue("@cityID", cityID);
             using (SqlDataReader reader = Check.ExecuteReader())
@@ -1666,11 +1152,11 @@ static class PublicData//the Encapsulation of all providers' databases
         }
         return Task.FromResult<bool>(result);
     }
-    internal static Task<bool> ContainsCity(SqlConnection connection,string LocaleName)
+    internal static Task<bool> ContainsCity(SqlConnection connection, string LocaleName)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Cities.Header+"WHERE[name_locale]=@localeName", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Cities.Header + "WHERE[name_locale]=@localeName", connection))
         {
             Check.Parameters.AddWithValue("@localeName", LocaleName);
             using (SqlDataReader reader = Check.ExecuteReader())
@@ -1691,11 +1177,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //   T:System.InvalidOperationException:
     //   T:System.IO.IOException:
     //   T:System.ObjectDisposedException:
-    internal static Task<bool> ContainsRestaurant(SqlConnection connection,SmallInt cityID, string name )
+    internal static Task<bool> ContainsRestaurant(SqlConnection connection, SmallInt cityID, string name)
     {
         bool result = false;
-        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Restaurants.Header+"WHERE[name]=@name AND [city_ID]=@cityID", connection))
+        using (SqlCommand Check = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Restaurants.Header + "WHERE[name]=@name AND [city_ID]=@cityID", connection))
         {
             Check.Parameters.AddWithValue("@name", name);
             Check.Parameters.AddWithValue("@cityID", cityID);
@@ -1718,11 +1204,11 @@ static class PublicData//the Encapsulation of all providers' databases
     //     city name not exist
     //   T:System.IO.IOException:
     //   T:System.ObjectDisposedException:
-    internal static Task<SmallInt> GetCityID(SqlConnection connection,string LocaleName)
+    internal static Task<SmallInt> GetCityID(SqlConnection connection, string LocaleName)
     {
-        SmallInt ID=0;
-        using(SqlCommand GetID = new SqlCommand("SELECT[ID]FROM"+DatabaseHeader
-            +Table_Cities.Header+"WHERE[name_locale]=@localeName", connection))
+        SmallInt ID = 0;
+        using (SqlCommand GetID = new SqlCommand("SELECT[ID]FROM" + DatabaseHeader
+            + Table_Cities.Header + "WHERE[name_locale]=@localeName", connection))
         {
             GetID.Parameters.AddWithValue("@localeName", LocaleName);
             using (SqlDataReader reader = GetID.ExecuteReader())
@@ -1730,7 +1216,7 @@ static class PublicData//the Encapsulation of all providers' databases
                 reader.Read();
                 ID = (SmallInt)reader[0];
             }
-                
+
         }
         return Task.FromResult<SmallInt>(ID);
     }
