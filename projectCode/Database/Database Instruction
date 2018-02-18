@@ -110,7 +110,7 @@
             vii)  nationID：用户注册国家
             viii) DataProviderID：数据提供者ID
             
-    d) 查询方法（目前可用）
+    d) 查询方法（暂未完成......如需急用请及时联系）
         Ⅰ)  ContainsProvider：数据库内是否有某数据提供者
         Ⅱ) ContainsNation：数据库内是否支持某国家/地区
         Ⅲ) ContainsCity：数据库内是否支持某城市
@@ -119,3 +119,8 @@
         Ⅵ) GetMenu：获取某餐厅的菜单
         Ⅶ) GetRestaurantRatingComment：获取某餐厅的评价
         Ⅷ) GetDishRatingComment：获取菜品的评价
+        Ⅸ) GetCuisineID：获取菜系id
+        Ⅹ) GetCuisineName：获取菜系名
+        Ⅺ) UpdataRestaurantComment：上传用户对餐厅的评价
+        Ⅻ) UpdataDishComment：上传用户对菜品的评价
+        ⅩⅢ) UpdataFeedBack：上传用户对本skill的评价
