@@ -1,4 +1,4 @@
-1. PublicData
+1. PublicData：只使用的话可以只看Restaurants、Dishes、Cuisines、RatingComments和d)公共查询接口
 
     a) 简介
         对于程序的其他逻辑部分来说，所有能使用的公共数据都保存在这个数据库中。
@@ -115,4 +115,7 @@
         Ⅱ) ContainsNation：数据库内是否支持某国家/地区
         Ⅲ) ContainsCity：数据库内是否支持某城市
         Ⅳ) ContainsRestaurant：数据库内是否支持某餐厅
-        Ⅴ) GetCityID：获得某城市的内部ID
+        Ⅴ) GetNearbyRestaurants：获取附近的餐厅
+        Ⅵ) GetMenu：获取某餐厅的菜单
+        Ⅶ) GetRestaurantRatingComment：获取某餐厅的评价
+        Ⅷ) GetDishRatingComment：获取菜品的评价
