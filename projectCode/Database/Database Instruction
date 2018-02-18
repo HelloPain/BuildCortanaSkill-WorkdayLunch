@@ -68,9 +68,9 @@
             iii)   name：当地全名 [nvarchar] [not null]
             iv)    locality_address：当地地址（至少从城市地址起） [nvarchar] [not null]
             v)     description：餐厅描述 [nvarchar]
-            vi)    locality_latitude：纬度 [decimal(15,13)]
-            vii)   locality_longitude：经度 [decimal(15,12)]
-            viii)  locality_zipcode：当地邮编 [varchar]
+            vi)    latitude：纬度 [decimal(8,6)]
+            vii)   longitude：经度 [decimal(9,6)]
+            viii)  zipcode：当地邮编 [varchar]
             ix)    currency_Nation_ID：支付货币的所属国家
             x)     restaurant_type：餐厅类型，枚举字符串 [varchar]
             xi)    open_time：开店当地时间 [smalldatetime]
