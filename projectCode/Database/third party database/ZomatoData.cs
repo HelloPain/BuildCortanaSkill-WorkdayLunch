@@ -9,9 +9,9 @@ using BigInt = System.Int64;
 using TinyInt = System.Byte;
 
 
-namespace Bot_Application.Database
+namespace Bot_Application.Database.third_party_database
 {
-    static class ZomatoData//database for Zomato.com//updated
+    static class ZomatoData//database for Zomato.com
     {
         public const string DatabaseHeader = "[ZomatoData].";
         private static class Table_Categories
