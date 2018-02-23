@@ -12,8 +12,7 @@ namespace Bot_Application.API
     public class YelpClient : HttpClient
     {
         //doc https://www.yelp.com/developers/documentation/v3/get_started
-        static readonly string defaultApiKey = "_9OMQKqPnoC-XconiQ6HR5l5Z_edOEb12rKFMXh9OUlQYJ_AEFmvsbWihrL2r5kWOpR7Sz3SxXeaSW_vHNNXMvtHER_gmbZizzBfaW20RsP3Nf3pkS6KYFXTQZmOWnYx";
-        static readonly string defaultClientID = "iHSYKEmFeOvvOjM4d58kbw";
+        static readonly string defaultApiKey = YOUR_API_KEY;
         [Serializable]
         public class CoordinatesJsonObject
         {
