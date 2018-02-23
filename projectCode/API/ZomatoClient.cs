@@ -11,7 +11,7 @@ using BigInt = System.Int64;
 using TinyInt = System.Byte;
 using System.Threading;
 
-namespace Bot_Application.API.
+namespace Bot_Application.API
 {
     public class ZomatoClient : HttpClient
     {
