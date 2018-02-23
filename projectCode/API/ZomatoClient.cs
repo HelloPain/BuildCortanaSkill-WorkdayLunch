@@ -11,7 +11,7 @@ using BigInt = System.Int64;
 using TinyInt = System.Byte;
 using System.Threading;
 
-namespace Bot_Application.API
+namespace Bot_Application.API.
 {
     public class ZomatoClient : HttpClient
     {
@@ -22,7 +22,7 @@ namespace Bot_Application.API
           "location_details","locations",//location
           "dailymenu","restaurant","reviews","search"//restaurant
         };
-        private static string DefaultKey = "8e4b611eaf47262f7d5ab7d7c8b25cfb";
+        private static string DefaultKey = YOUR_API_KEY;
         public class CategoriesJson
         {
             public struct Catergory
