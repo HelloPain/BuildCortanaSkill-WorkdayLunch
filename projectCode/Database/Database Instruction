@@ -67,10 +67,10 @@
             vi)   Res_CateTaste：餐厅 和菜品口味tag 之间的关系
             vii)  Res_Dish：餐厅 和菜品 之间的关系
             viii) Res_Rating：餐厅 和评价 之间的关系
-            ix)   Dish_CateCuisine：菜品 和评价之间的关系
+            ix)   Dish_CateCuisine：菜品 和菜系tag 之间的关系
             x)    Dish_CateOther：菜品 和其他tag 之间的关系
             xi)   Dish_CateTaste：菜品 和口味tag 之间的关系
-            xii)  Dish_Rating：菜品 和评价之间的关系
+            xii)  Dish_Rating：菜品 和评价 之间的关系
            
             
     c) 公共方法
