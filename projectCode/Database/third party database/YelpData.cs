@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using SmallInt = System.Int16;
+using Bot_Application.Database.third_party_database;
 using Int = System.Int32;
 using BigInt = System.Int64;
 using TinyInt = System.Byte;
